@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
+
 	"sakibox/config"
 	"sakibox/internal/finder"
 	"sakibox/internal/voice"
@@ -75,8 +77,19 @@ func findByName(reader *bufio.Reader) error {
 	if err != nil {
 		return err
 	}
+	keyword = strings.TrimSpace(keyword)
+	if keyword == "" {
+		printRed(voice.Line("invalid_keyword"))
+		return waitForEnter(reader)
+	}
+	fmt.Printf("  %s", voice.Line("finder_match_prompt"))
+	matchType, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	exact := strings.TrimSpace(matchType) == "2"
 	printYellow(voice.Line("searching"))
-	results, err := finder.FindByName(path, strings.TrimSpace(keyword))
+	results, err := finder.FindByName(path, keyword, exact)
 	if err != nil {
 		return err
 	}
@@ -189,6 +202,12 @@ func findGlobal(reader *bufio.Reader) error {
 		printRed(voice.Line("invalid_keyword"))
 		return waitForEnter(reader)
 	}
+	fmt.Printf("  %s", voice.Line("finder_match_prompt"))
+	matchType, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	exact := strings.TrimSpace(matchType) == "2"
 	fmt.Printf("  %s", voice.Line("finder_global_type_prompt"))
 	extInput, err := reader.ReadString('\n')
 	if err != nil {
@@ -205,7 +224,7 @@ func findGlobal(reader *bufio.Reader) error {
 	}
 	printYellow(fmt.Sprintf("%s%s", voice.Line("searching_dir"), searchPath))
 
-	results, err := finder.FindByContentWithExt(searchPath, query, extInput)
+	results, err := finder.FindByNameWithExt(searchPath, query, extInput, exact)
 	if err != nil {
 		return err
 	}
@@ -214,10 +233,11 @@ func findGlobal(reader *bufio.Reader) error {
 		return waitForEnter(reader)
 	}
 
-	printWhite("\n  FILE                             LINE  CONTENT")
+	printMagenta(fmt.Sprintf("\n  %s", voice.Linef("finder_results_count", len(results))))
+	printWhite("\n  PATH                             SIZE    MODIFIED")
 	for _, item := range results {
-		printBlue(fmt.Sprintf("  %-32s", item.Path))
-		printWhite(fmt.Sprintf("  %-4d %s", item.Line, item.Content))
+		printFinderPath(item)
+		printWhite(fmt.Sprintf("  %-7s %s", item.Size, item.Modified))
 	}
 	printMagenta(fmt.Sprintf("%s%s", voice.Line("global_found"), searchPath))
 	return waitForEnter(reader)
@@ -248,9 +268,18 @@ func showFinderResults(reader *bufio.Reader, results []finder.Result) error {
 	printMagenta(fmt.Sprintf("\n  %s", voice.Linef("finder_results_count", len(results))))
 	printWhite("\n  PATH                             SIZE    MODIFIED")
 	for _, item := range results {
-		printBlue(fmt.Sprintf("  %-32s", item.Path))
+		printFinderPath(item)
 		printWhite(fmt.Sprintf("  %-7s %s", item.Size, item.Modified))
 	}
 	printMagenta(voice.Line("finder_results_done"))
 	return waitForEnter(reader)
+}
+
+func printFinderPath(item finder.Result) {
+	path := fmt.Sprintf("  %-32s", item.Path)
+	if item.IsDir {
+		color.New(color.FgYellow).Print(path)
+		return
+	}
+	printBlue(path)
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -76,8 +77,9 @@ func showBookmarkMenu(reader *bufio.Reader) error {
 				continue
 			}
 			cmd := exec.Command("/bin/sh", "-c", cmdLine)
-			cmd.Stdout = nil
-			cmd.Stderr = nil
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
 				printRed(err.Error())
 			} else {

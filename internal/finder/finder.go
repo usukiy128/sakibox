@@ -18,6 +18,7 @@ type Result struct {
 	Path     string
 	Size     string
 	Modified string
+	IsDir    bool
 }
 
 type ContentResult struct {
@@ -26,14 +27,38 @@ type ContentResult struct {
 	Content string
 }
 
-func FindByName(root, keyword string) ([]Result, error) {
+func FindByName(root, keyword string, exact bool) ([]Result, error) {
+	return FindByNameWithExt(root, keyword, "", exact)
+}
+
+func FindByNameWithExt(root, keyword, ext string, exact bool) ([]Result, error) {
+	ext = strings.TrimSpace(ext)
+	if ext != "" && !strings.HasPrefix(ext, ".") {
+		ext = "." + ext
+	}
 	return walkFiles(root, func(path string, info os.FileInfo) (bool, error) {
+		if info.IsDir() && ext != "" {
+			return false, nil
+		}
+		if ext != "" && !strings.EqualFold(filepath.Ext(info.Name()), ext) {
+			return false, nil
+		}
+		if exact {
+			return info.Name() == keyword, nil
+		}
 		return strings.Contains(info.Name(), keyword), nil
 	})
 }
 
 func FindByExt(root, ext string) ([]Result, error) {
+	ext = strings.TrimSpace(ext)
+	if ext != "" && !strings.HasPrefix(ext, ".") {
+		ext = "." + ext
+	}
 	return walkFiles(root, func(path string, info os.FileInfo) (bool, error) {
+		if info.IsDir() {
+			return false, nil
+		}
 		return strings.EqualFold(filepath.Ext(info.Name()), ext), nil
 	})
 }
@@ -137,13 +162,18 @@ func walkFiles(root string, matcher func(path string, info os.FileInfo) (bool, e
 		return nil, err
 	}
 	results := make([]Result, 0)
-	forEachFile(root, cfg.IgnoreDirs, func(path string, info os.FileInfo) error {
+	forEachDirThenFiles(root, cfg.IgnoreDirs, func(path string, info os.FileInfo) error {
 		match, err := matcher(path, info)
 		if err != nil {
 			return err
 		}
 		if match {
-			results = append(results, Result{Path: path, Size: formatSize(info.Size()), Modified: info.ModTime().Format("2006-01-02 15:04")})
+			results = append(results, Result{
+				Path:     path,
+				Size:     formatSize(info.Size()),
+				Modified: info.ModTime().Format("2006-01-02 15:04"),
+				IsDir:    info.IsDir(),
+			})
 		}
 		return nil
 	})
@@ -172,6 +202,54 @@ func forEachFile(root string, ignore []string, handle func(path string, info os.
 		_ = handle(path, info)
 		return nil
 	})
+}
+
+func forEachDirThenFiles(root string, ignore []string, handle func(path string, info os.FileInfo) error) {
+	type searchEntry struct {
+		path string
+		info os.FileInfo
+	}
+	var dirs []searchEntry
+	var files []searchEntry
+
+	_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if entry.IsDir() {
+			name := entry.Name()
+			if strings.HasPrefix(name, ".") {
+				if path != root {
+					return filepath.SkipDir
+				}
+			}
+			for _, skip := range ignore {
+				if name == skip {
+					return filepath.SkipDir
+				}
+			}
+			if path != root {
+				info, err := entry.Info()
+				if err == nil {
+					dirs = append(dirs, searchEntry{path: path, info: info})
+				}
+			}
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return nil
+		}
+		files = append(files, searchEntry{path: path, info: info})
+		return nil
+	})
+
+	for _, item := range dirs {
+		_ = handle(item.path, item.info)
+	}
+	for _, item := range files {
+		_ = handle(item.path, item.info)
+	}
 }
 
 func parseSize(input string) (int64, error) {
