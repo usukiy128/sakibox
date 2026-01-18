@@ -39,15 +39,41 @@ func ListPorts() ([]Entry, error) {
 		}
 		pid, _ := strconv.Atoi(fields[1])
 		name := fields[0]
-		addr := fields[len(fields)-1]
-		portStr := addr[strings.LastIndex(addr, ":")+1:]
-		port, err := strconv.Atoi(portStr)
-		if err != nil {
+		port, ok := parsePortFromFields(fields)
+		if !ok {
 			continue
 		}
 		entries = append(entries, Entry{Port: port, Process: name, PID: pid})
 	}
 	return entries, nil
+}
+
+func parsePortFromFields(fields []string) (int, bool) {
+	for i := len(fields) - 1; i >= 0; i-- {
+		field := fields[i]
+		if strings.Contains(field, "->") {
+			parts := strings.Split(field, "->")
+			if len(parts) > 0 {
+				field = parts[0]
+			}
+		}
+		if !strings.Contains(field, ":") {
+			continue
+		}
+		field = strings.TrimSuffix(field, ")")
+		field = strings.TrimSuffix(field, "(LISTEN)")
+		idx := strings.LastIndex(field, ":")
+		if idx == -1 || idx == len(field)-1 {
+			continue
+		}
+		portStr := field[idx+1:]
+		port, err := strconv.Atoi(portStr)
+		if err != nil {
+			continue
+		}
+		return port, true
+	}
+	return 0, false
 }
 
 func FindPort(port int) (Entry, error) {
