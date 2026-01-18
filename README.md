@@ -11,6 +11,26 @@
 - 文件查找：按名称、扩展名、内容、大小、修改时间、全局检索
 - 安装帮助：生成 Linux 工具/依赖安装命令
 
+## 使用方式
+
+一条命令安装:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/usukiy128/sakibox/main/install.sh | sh
+```
+
+默认安装到 `/usr/local/bin`。如需自定义路径:
+
+```bash
+SAKIBOX_INSTALL_DIR="$HOME/.local/bin" curl -fsSL https://raw.githubusercontent.com/usukiy128/sakibox/main/install.sh | sh
+```
+
+运行:
+
+```bash
+sakibox
+```
+
 ## 目录结构
 
 - cmd: CLI 入口与菜单
