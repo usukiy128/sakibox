@@ -31,6 +31,14 @@ SAKIBOX_INSTALL_DIR="$HOME/.local/bin" curl -fsSL https://raw.githubusercontent.
 sakibox
 ```
 
+更新:
+
+```bash
+sakibox
+```
+
+进入主菜单后选择“更新 sakibox”即可。
+
 历史命令默认读取 `~/.zsh_history`，若不存在会自动尝试 `~/.bash_history` 与 `~/.config/fish/fish_history`。也可以在 `~/.sakibox/config.yaml` 中配置 `history_file` 自定义路径。
 
 ## 目录结构
