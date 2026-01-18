@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"sakibox/config"
@@ -19,8 +20,18 @@ func List() ([]Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	lines, err := readLines(cfg.HistoryFile)
+	historyPath, err := resolveHistoryFile(cfg.HistoryFile)
 	if err != nil {
+		return nil, err
+	}
+	if historyPath == "" {
+		return []Entry{}, nil
+	}
+	lines, err := readLines(historyPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []Entry{}, nil
+		}
 		return nil, err
 	}
 	entries := make([]Entry, 0)
@@ -78,4 +89,38 @@ func readLines(path string) ([]string, error) {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
+}
+
+func resolveHistoryFile(primary string) (string, error) {
+	if primary != "" {
+		if _, err := os.Stat(primary); err == nil {
+			return primary, nil
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+	}
+	candidates, err := defaultHistoryCandidates()
+	if err != nil {
+		return "", err
+	}
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+	}
+	return "", nil
+}
+
+func defaultHistoryCandidates() ([]string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	return []string{
+		filepath.Join(home, ".zsh_history"),
+		filepath.Join(home, ".bash_history"),
+		filepath.Join(home, ".config", "fish", "fish_history"),
+	}, nil
 }
