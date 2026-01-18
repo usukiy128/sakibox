@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"sakibox/config"
@@ -44,6 +45,7 @@ func showMainMenu() error {
 		fmt.Println("  4. 进程监控")
 		fmt.Println("  5. 文件查找")
 		fmt.Println("  6. 安装帮助")
+		fmt.Println("  7. 更新 sakibox")
 		fmt.Println("  0. 退出")
 		fmt.Printf("\n  %s", voice.Line("main_prompt"))
 
@@ -76,6 +78,16 @@ func showMainMenu() error {
 			}
 		case "6":
 			if err := showInstallMenu(reader); err != nil {
+				return err
+			}
+		case "7":
+			printMagenta(voice.Line("update_intro"))
+			if err := runUpdate(); err != nil {
+				printRed(voice.Line("update_failed"))
+			} else {
+				printGreen(voice.Line("update_done"))
+			}
+			if err := waitForEnter(reader); err != nil {
 				return err
 			}
 		case "0":
@@ -132,4 +144,11 @@ func printWhite(msg string) {
 
 func printBlue(msg string) {
 	color.New(color.FgBlue).Println(msg)
+}
+
+func runUpdate() error {
+	cmd := exec.Command("/bin/sh", "-c", "curl -fsSL https://raw.githubusercontent.com/usukiy128/sakibox/main/install.sh | sh")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
