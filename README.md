@@ -13,6 +13,50 @@
 
 ## 使用方式
 
+Go 安装（未安装时请先安装）:
+
+macOS:
+
+```bash
+brew install go
+```
+
+Linux:
+
+Ubuntu/Debian:
+
+```bash
+sudo apt update
+sudo apt install -y golang
+```
+
+CentOS/RHEL:
+
+```bash
+sudo yum install -y golang
+```
+
+Arch:
+
+```bash
+sudo pacman -S go
+```
+
+Alpine:
+
+```bash
+sudo apk add go
+```
+
+通用安装（wget + 官方包）:
+
+```bash
+cd /tmp
+wget https://go.dev/dl/go1.24.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.24.0.linux-amd64.tar.gz
+```
+
 一条命令安装:
 
 ```bash
