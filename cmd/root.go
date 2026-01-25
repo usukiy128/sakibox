@@ -45,7 +45,8 @@ func showMainMenu() error {
 		fmt.Println("  4. 进程监控")
 		fmt.Println("  5. 文件查找")
 		fmt.Println("  6. 安装帮助")
-		fmt.Println("  7. 更新 sakibox")
+		fmt.Println("  7. SSH 工具")
+		fmt.Println("  8. 更新 sakibox")
 		fmt.Println("  0. 退出")
 		fmt.Printf("\n  %s", voice.Line("main_prompt"))
 
@@ -81,6 +82,10 @@ func showMainMenu() error {
 				return err
 			}
 		case "7":
+			if err := showSSHMenu(reader); err != nil {
+				return err
+			}
+		case "8":
 			printMagenta(voice.Line("update_intro"))
 			if err := runUpdate(); err != nil {
 				printRed(voice.Line("update_failed"))
@@ -103,7 +108,7 @@ func showMainMenu() error {
 }
 
 func printLogo() {
-	logo := "_    _ _               \n          | |  (_) |              \n ___  __ _| | ___| |__   _____  __\n/ __|/ _` | |/ / | '_ \\ / _ \\ \\/ /\n\\__ \\ (_| |   <| | |_) | (_) >  < \n|___/\\__,_|_|\\_\\_|_.__/ \\___/_/\\_\\ v0.0.4"
+	logo := "_    _ _               \n          | |  (_) |              \n ___  __ _| | ___| |__   _____  __\n/ __|/ _` | |/ / | '_ \\ / _ \\ \\/ /\n\\__ \\ (_| |   <| | |_) | (_) >  < \n|___/\\__,_|_|\\_\\_|_.__/ \\___/_/\\_\\ v0.0.5"
 	printCyan(logo)
 	fmt.Println()
 }
